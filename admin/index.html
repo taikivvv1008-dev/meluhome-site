@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Melu Home 管理画面</title>
+<link rel="icon" href="../icon.png">
+<style>
+  :root {
+    --bg: #FFF7F0; --card: #FFFFFF; --text: #3B2F28; --sub: #9C8B7E; --accent: #F28C28; --accent-soft: #FDE7D2;
+    --line: #F1E4D8; --good: #3C9A5F; --bad: #C8574F; --blue: #3F7CC0; --row: #FFFBF7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1F1A17; --card: #2A2420; --text: #F3EAE2; --sub: #B4A79C; --accent: #F5A04A; --accent-soft: #4A3524;
+      --line: #3A322C; --good: #6CC08C; --bad: #E58A82; --blue: #7FAEE2; --row: #2F2824; color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: 'Hiragino Sans', 'Noto Sans JP', 'Yu Gothic', sans-serif; line-height: 1.6; font-size: 14px; }
+  [hidden] { display: none !important; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 20px 16px 64px; }
+  header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  header img { width: 36px; height: 36px; border-radius: 10px; }
+  header .title { font-weight: bold; font-size: 18px; }
+  header .who { margin-left: auto; color: var(--sub); font-size: 13px; display: flex; gap: 10px; align-items: center; }
+  nav.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  nav.tabs button { border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 999px;
+    padding: 7px 16px; font: inherit; cursor: pointer; }
+  nav.tabs button.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: bold; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+  .stack { display: flex; flex-direction: column; gap: 16px; }
+  .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr)); }
+  .grid2 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
+  .stat .label { color: var(--sub); font-size: 12px; }
+  .stat .value { font-size: 24px; font-weight: bold; font-variant-numeric: tabular-nums; }
+  .stat .note { color: var(--sub); font-size: 12px; }
+  .up { color: var(--good); } .down { color: var(--bad); }
+  h2 { font-size: 16px; margin: 0 0 10px; }
+  h3 { font-size: 14px; margin: 14px 0 6px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .muted { color: var(--sub); font-size: 12px; }
+  button.btn, .btn { border: 1px solid var(--accent); background: var(--accent); color: #fff; border-radius: 10px;
+    padding: 7px 14px; font: inherit; font-weight: bold; cursor: pointer; }
+  button.ghost { background: transparent; color: var(--accent); }
+  button.danger { background: var(--bad); border-color: var(--bad); }
+  button.small { padding: 3px 10px; font-size: 12px; }
+  button:disabled { opacity: .5; cursor: default; }
+  input, select, textarea { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line);
+    border-radius: 10px; padding: 7px 10px; min-width: 0; }
+  label.f { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--sub); }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { color: var(--sub); font-weight: normal; font-size: 12px; }
+  td.n, th.n { text-align: right; }
+  tr.click { cursor: pointer; } tr.click:hover td { background: var(--row); }
+  .pill { display: inline-block; border-radius: 999px; padding: 1px 9px; font-size: 12px; background: var(--accent-soft); }
+  .pill.pending { background: var(--accent-soft); }
+  .pill.confirmed { background: color-mix(in srgb, var(--blue) 22%, transparent); }
+  .pill.paid, .pill.active { background: color-mix(in srgb, var(--good) 22%, transparent); }
+  .pill.canceled, .pill.paused { background: color-mix(in srgb, var(--bad) 22%, transparent); }
+  .chart svg { width: 100%; height: 150px; display: block; }
+  .chart .bar { fill: var(--accent); } .chart .bar.alt { fill: var(--blue); }
+  .chart text { fill: var(--sub); font-size: 10px; }
+  .chart .bar.neg { fill: var(--bad); } .chart .zero { stroke: var(--line); stroke-width: 1; }
+  .stat.strong { border-color: var(--accent); }
+  .stat .unit { font-size: 14px; color: var(--sub); font-weight: normal; }
+  .badge { display: inline-block; border-radius: 6px; padding: 0 6px; font-size: 11px; margin-left: 4px; }
+  .badge.good { background: color-mix(in srgb, var(--good) 22%, transparent); }
+  .badge.mid { background: var(--accent-soft); }
+  .badge.bad { background: color-mix(in srgb, var(--bad) 22%, transparent); }
+  .badge.none { background: var(--line); color: var(--sub); }
+  tfoot th { color: var(--text); font-weight: bold; border-top: 2px solid var(--line); }
+  h2 .muted { font-weight: normal; margin-left: 6px; }
+  .login { max-width: 380px; margin: 12vh auto 0; }
+  .msg { padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); margin-bottom: 12px; }
+  .msg.err { background: color-mix(in srgb, var(--bad) 20%, transparent); }
+  .token { font-family: ui-monospace, Menlo, Consolas, monospace; background: var(--bg); padding: 6px 10px;
+    border-radius: 8px; border: 1px dashed var(--line); word-break: break-all; }
+  dl.kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 0; }
+  dl.kv dt { color: var(--sub); } dl.kv dd { margin: 0; overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- ログイン -->
+  <div id="login" class="login card" hidden>
+    <div class="row" style="margin-bottom:12px"><img src="../icon.png" alt="" width="36" height="36" style="border-radius:10px"><b>Melu Home 管理画面</b></div>
+    <div id="loginMsg" class="msg" hidden></div>
+    <form id="emailForm" class="stack">
+      <label class="f">アプリと同じメールアドレス<input id="email" type="email" autocomplete="email" required></label>
+      <button class="btn" type="submit">コードを送る</button>
+    </form>
+    <form id="codeForm" class="stack" hidden>
+      <label class="f">メールに届いた6けたのコード<input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required></label>
+      <button class="btn" type="submit">ログイン</button>
+      <button class="btn ghost" type="button" id="backToEmail">メールアドレスを入れなおす</button>
+    </form>
+  </div>
+
+  <!-- 中身 -->
+  <div id="app" hidden>
+    <header>
+      <img src="../icon.png" alt="">
+      <span class="title">Melu Home 管理画面</span>
+      <span class="who"><span id="who"></span><button class="btn ghost small" id="logout">ログアウト</button></span>
+    </header>
+    <nav class="tabs" id="tabs">
+      <button data-tab="kpi" class="on">数字</button>
+      <button data-tab="affiliates">紹介する人</button>
+      <button data-tab="rewards">報酬</button>
+      <button data-tab="payouts">締めと支払い</button>
+    </nav>
+    <div id="flash" class="msg" hidden></div>
+    <section id="tab-kpi" class="stack"></section>
+    <section id="tab-affiliates" class="stack" hidden></section>
+    <section id="tab-rewards" class="stack" hidden></section>
+    <section id="tab-payouts" class="stack" hidden></section>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+// Supabase の公開の接続先（アプリに入っているものと同じ。秘密ではない）
+const SUPABASE_URL = 'https://ubmownphduavjfmpayhw.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_x1fBdwYzCmRZ1_yl-XNHqA_1kefDvWA';
+const API = SUPABASE_URL + '/functions/v1/admin';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { storageKey: 'melu-admin-auth' } });
+
+const $ = (id) => document.getElementById(id);
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const yen = (v) => '¥' + Math.round(Number(v || 0)).toLocaleString('ja-JP');
+const num = (v) => Number(v || 0).toLocaleString('ja-JP');
+const pct = (v) => (v === null || v === undefined ? '–' : Math.round(Number(v) * 1000) / 10 + '%');
+const day = (v) => (v ? new Date(v).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit' }) : '–');
+const time = (v) => (v ? new Date(v).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '–');
+const STATUS = { pending: '保留', confirmed: '確定', paid: '支払済', canceled: '取消', active: '有効', paused: '停止' };
+const KIND = { sub_initial: '初回', sub_renewal: '更新', adjustment: '調整' };
+const TYPE = { individual: '個人', agency: '代理店' };
+const SOURCE = { appsflyer: 'AppsFlyer', link: 'リンク', manual: '手入力', clipboard: '貼り付け', ip: 'IP の一致' };
+const pill = (s) => `<span class="pill ${esc(s)}">${esc(STATUS[s] || s)}</span>`;
+
+function flash(text, isError) {
+  const el = $('flash');
+  el.textContent = text;
+  el.className = 'msg' + (isError ? ' err' : '');
+  el.hidden = false;
+  clearTimeout(flash.t);
+  flash.t = setTimeout(() => (el.hidden = true), 6000);
+}
+
+async function api(path, options = {}) {
+  const { data } = await sb.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) { showLogin(); throw new Error('ログインしてください。'); }
+  const res = await fetch(API + path, {
+    method: options.method || 'GET',
+    headers: { Authorization: 'Bearer ' + token, apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+  const body = await res.json().catch(() => ({}));
+  if (res.status === 401) { showLogin('ログインしなおしてください。'); throw new Error(body.error); }
+  if (!res.ok) throw new Error(body.error || 'うまくいきませんでした。');
+  return body;
+}
+
+// 2回押して実行する（まちがって押さないように）
+function twoStep(button, label, run) {
+  if (button.dataset.armed) {
+    button.disabled = true;
+    run().finally(() => { button.disabled = false; });
+    delete button.dataset.armed;
+    button.textContent = label;
+    return;
+  }
+  button.dataset.armed = '1';
+  button.textContent = 'もう一度押すと実行';
+  setTimeout(() => { if (button.dataset.armed) { delete button.dataset.armed; button.textContent = label; } }, 4000);
+}
+
+// ---- ログイン ---------------------------------------------------------------
+function loginMsg(text, isError) {
+  const el = $('loginMsg');
+  el.hidden = !text;
+  el.textContent = text || '';
+  el.className = 'msg' + (isError ? ' err' : '');
+}
+function showLogin(text) {
+  $('app').hidden = true;
+  $('login').hidden = false;
+  loginMsg(text, !!text);
+}
+$('emailForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = $('email').value.trim();
+  const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
+  if (error) return loginMsg('コードを送れませんでした。メールアドレスを確かめてください。', true);
+  $('emailForm').hidden = true;
+  $('codeForm').hidden = false;
+  loginMsg('メールにコードを送りました。');
+  $('code').focus();
+});
+$('codeForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const { error } = await sb.auth.verifyOtp({ email: $('email').value.trim(), token: $('code').value.trim(), type: 'email' });
+  if (error) return loginMsg('コードがちがうか、期限が切れています。', true);
+  start();
+});
+$('backToEmail').addEventListener('click', () => { $('codeForm').hidden = true; $('emailForm').hidden = false; loginMsg(''); });
+$('logout').addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
+
+async function start() {
+  const { data } = await sb.auth.getSession();
+  if (!data.session) return showLogin();
+  try {
+    const me = await api('/me');
+    $('who').textContent = me.email;
+    $('login').hidden = true;
+    $('app').hidden = false;
+    openTab(location.hash.slice(1) || 'kpi');
+  } catch (err) {
+    await sb.auth.signOut();
+    showLogin(err.message);
+  }
+}
+
+// ---- タブ -------------------------------------------------------------------
+const loaders = { kpi: loadKpi, affiliates: loadAffiliates, rewards: loadRewards, payouts: loadPayouts };
+function openTab(name) {
+  if (!loaders[name]) name = 'kpi';
+  document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === name));
+  Object.keys(loaders).forEach((k) => ($('tab-' + k).hidden = k !== name));
+  history.replaceState(null, '', '#' + name);
+  loaders[name]().catch((err) => flash(err.message, true));
+}
+$('tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) openTab(b.dataset.tab); });
+
+// ---- グラフ -----------------------------------------------------------------
+// 棒グラフ（マイナスは0の線の下に描く）
+function chart(rows, key, title, opts = {}) {
+  const w = 600, h = 160, top = 8, bottom = 18, left = 4;
+  const vals = rows.map((r) => Number(r[key] || 0));
+  const max = Math.max(0, ...vals), min = Math.min(0, ...vals);
+  const span = max - min || 1;
+  const y = (v) => top + ((max - v) / span) * (h - top - bottom);
+  const zero = y(0);
+  const bw = (w - left) / Math.max(rows.length, 1);
+  const fmt = opts.yen ? yen : num;
+  const rects = rows.map((r, i) => {
+    const v = vals[i];
+    const y1 = Math.min(y(v), zero), hh = Math.max(Math.abs(y(v) - zero), v ? 1 : 0);
+    const cls = v < 0 ? 'bar neg' : 'bar' + (opts.alt ? ' alt' : '');
+    return `<rect class="${cls}" x="${left + i * bw + bw * 0.15}" y="${y1}" width="${Math.max(bw * 0.7, 1)}" height="${hh}" rx="1.5"><title>${esc(r.day)}: ${fmt(v)}</title></rect>`;
+  }).join('');
+  const total = vals.reduce((s, v) => s + v, 0);
+  const first = rows[0]?.day?.slice(5) || '', last = rows[rows.length - 1]?.day?.slice(5) || '';
+  return `<div class="card chart"><div class="row" style="justify-content:space-between"><b>${esc(title)}</b><span class="muted">合計 ${opts.yen ? signedYen(total) : num(total)}</span></div>
+    <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="${esc(title)}">
+    <line x1="0" x2="${w}" y1="${zero}" y2="${zero}" class="zero"/>${rects}
+    <text x="${left}" y="${h - 3}">${esc(first)}</text><text x="${w - 2}" y="${h - 3}" text-anchor="end">${esc(last)}</text></svg></div>`;
+}
+
+const signedYen = (v) => (Number(v) < 0 ? '−' : '') + yen(Math.abs(Number(v || 0)));
+const rate = (a, b) => (Number(b) > 0 ? Number(a) / Number(b) : null);
+const fmtPct = (v, d = 1) => (v === null || v === undefined || !Number.isFinite(v) ? '—' : (Math.round(v * 100 * 10 ** d) / 10 ** d).toFixed(d) + '%');
+function stat(label, value, note, strong) {
+  return `<div class="card stat${strong ? ' strong' : ''}"><div class="label">${esc(label)}</div><div class="value">${value}</div>${note ? `<div class="note">${note}</div>` : ''}</div>`;
+}
+function delta(a, b, kind) {
+  const d = Number(a || 0) - Number(b || 0);
+  if (!d) return '<span class="muted">前と同じ</span>';
+  const text = kind === 'yen' ? (d > 0 ? '+' : '−') + yen(Math.abs(d)) : (d > 0 ? '+' : '') + num(d);
+  const p = Number(b) ? `（${d > 0 ? '+' : ''}${Math.round((d / Math.abs(Number(b))) * 100)}%）` : '';
+  return `<span class="${d > 0 ? 'up' : 'down'}">${text}${p}</span>`;
+}
+const profitCls = (v) => (Number(v) < 0 ? 'down' : Number(v) > 0 ? 'up' : '');
+// 目標とくらべた印（good: よい / mid: もう少し / bad: よくない / none: まだ数が少ない）
+function judge(value, good, mid, enough = true) {
+  if (!enough || value === null || value === undefined) return '<span class="badge none">数が少ない</span>';
+  if (value >= good) return '<span class="badge good">目安以上</span>';
+  if (value >= mid) return '<span class="badge mid">もう少し</span>';
+  return '<span class="badge bad">目安より下</span>';
+}
+function judgeLow(value, good, mid, enough = true) {
+  if (!enough || value === null || value === undefined) return '<span class="badge none">数が少ない</span>';
+  if (value <= good) return '<span class="badge good">目安以内</span>';
+  if (value <= mid) return '<span class="badge mid">もう少し</span>';
+  return '<span class="badge bad">目安より上</span>';
+}
+function sumRows(rows) {
+  const out = {};
+  for (const r of rows) for (const [k, v] of Object.entries(r)) if (k !== 'day') out[k] = (out[k] || 0) + Number(v || 0);
+  out.days = rows.length;
+  return out;
+}
+
+// ---- 数字（経営） -----------------------------------------------------------
+let kpiDays = 30;
+async function loadKpi() {
+  const el = $('tab-kpi');
+  el.innerHTML = '<div class="muted">読みこみ中…</div>';
+  const [b, k] = await Promise.all([api('/business?days=' + Math.max(kpiDays, 60)), api('/kpi?days=30')]);
+  const st = b.settings, d = b.daily, tot = b.totals, bm = b.benchmarks;
+  const n = d.length;
+  const t = d[n - 1] || {}, y = d[n - 2] || {};
+  const w = sumRows(d.slice(n - 7)), pw = sumRows(d.slice(n - 14, n - 7));
+  const m = sumRows(d.slice(n - 30)), pm = sumRows(d.slice(n - 60, n - 30));
+  const view = d.slice(-kpiDays);
+
+  // ベンチマーク
+  const margin30 = rate(m.profit_yen, m.net_yen);
+  const payRate = rate(tot.plus_paid, tot.families);
+  const arpu = rate(bm.revenue30_yen, bm.mau);
+  const arppu = rate(bm.revenue30_yen, bm.payer_families30);
+  const ltv90 = rate(bm.ltv90_revenue, bm.ltv90_families);
+  const churn = rate(bm.churned, bm.churn_base);
+  const subArpu = rate(tot.mrr_yen, tot.plus_paid);
+  const subLtv = subArpu !== null && churn ? subArpu / churn : null;
+  const trialConv = rate(bm.trial_converted, bm.trial_matured);
+  const r = bm.retention || {};
+  const ret = (k2) => rate(r[k2]?.kept, r[k2]?.cohort);
+  const aiPerMau = rate(bm.ai30_yen, bm.mau);
+  const costPerDau = rate(m.cost_yen, (m.dau || 0));
+  const aiPerFamilyActive = rate(bm.ai30_yen, bm.active_families);
+
+  el.innerHTML = `
+    <div class="row">
+      ${[7, 30, 90, 180].map((x) => `<button class="btn small ${x === kpiDays ? '' : 'ghost'}" data-days="${x}">${x}日</button>`).join('')}
+      <span class="muted">グラフと表の期間（日本時間）。今日 ${esc(b.today)}</span>
+    </div>
+
+    <div class="card"><h2>今日 <span class="muted">きのうとくらべて</span></h2><div class="grid">
+      ${stat('売上', yen(t.revenue_yen), delta(t.revenue_yen, y.revenue_yen, 'yen') + `<br>初回 ${num(t.paid_initial)}・更新 ${num(t.paid_renewal)}${t.refunds ? `・返金 ${num(t.refunds)}` : ''}`, true)}
+      ${stat('手取り', yen(t.net_yen), delta(t.net_yen, y.net_yen, 'yen') + '<br>消費税と手数料を引いたあと')}
+      ${stat('原価', yen(t.cost_yen), delta(t.cost_yen, y.cost_yen, 'yen') + `<br>AI ${yen(t.ai_yen)}・紹介 ${yen(t.affiliate_yen)}・固定 ${yen(t.fixed_yen)}`)}
+      ${stat('粗利', `<span class="${profitCls(t.profit_yen)}">${signedYen(t.profit_yen)}</span>`, delta(t.profit_yen, y.profit_yen, 'yen') + '<br>手取り − 原価', true)}
+      ${stat('DAU', num(t.dau), delta(t.dau, y.dau) + '<br>アプリを開いた人')}
+      ${stat('登録', num(t.signups), delta(t.signups, y.signups) + `<br>家族ができた ${num(t.new_families)}`)}
+      ${stat('お試しの開始', num(t.trials), delta(t.trials, y.trials))}
+      ${stat('メルへの話しかけ', num(t.messages), delta(t.messages, y.messages))}
+    </div></div>
+
+    <div class="card"><h2>直近7日 <span class="muted">その前の7日とくらべて</span></h2><div class="grid">
+      ${stat('売上', yen(w.revenue_yen), delta(w.revenue_yen, pw.revenue_yen, 'yen'), true)}
+      ${stat('手取り', yen(w.net_yen), delta(w.net_yen, pw.net_yen, 'yen'))}
+      ${stat('原価', yen(w.cost_yen), delta(w.cost_yen, pw.cost_yen, 'yen') + `<br>AI ${yen(w.ai_yen)}・紹介 ${yen(w.affiliate_yen)}・固定 ${yen(w.fixed_yen)}`)}
+      ${stat('粗利', `<span class="${profitCls(w.profit_yen)}">${signedYen(w.profit_yen)}</span>`, delta(w.profit_yen, pw.profit_yen, 'yen') + `<br>粗利率 ${fmtPct(rate(w.profit_yen, w.net_yen))}`, true)}
+      ${stat('DAU（平均）', num(Math.round(w.dau / 7)), delta(Math.round(w.dau / 7), Math.round(pw.dau / 7)))}
+      ${stat('登録', num(w.signups), delta(w.signups, pw.signups))}
+      ${stat('初回の課金', num(w.paid_initial), delta(w.paid_initial, pw.paid_initial) + `<br>更新 ${num(w.paid_renewal)}`)}
+      ${stat('お試しの開始', num(w.trials), delta(w.trials, pw.trials))}
+    </div></div>
+
+    <div class="card"><h2>全体</h2><div class="grid">
+      ${stat('MRR（月の売上の見込み）', yen(tot.mrr_yen), `払っているプラス ${num(tot.plus_paid)}件の月換算（年額は÷12）<br>お試し中もふくめると ${yen(tot.mrr_with_trial_yen)}${tot.mrr_at_risk_yen ? `<br><span class="down">解約予定 −${yen(tot.mrr_at_risk_yen)}</span>` : ''}`, true)}
+      ${stat('プラスの家族', num(tot.plus_families), `払っている ${num(tot.plus_paid)}・お試し中 ${num(tot.plus_trial)}・解約予定 ${num(tot.plus_canceling)}`)}
+      ${stat('課金率', fmtPct(payRate), `払っている家族 ${num(tot.plus_paid)} ÷ 家族 ${num(tot.families)}<br>目標 ${fmtPct(Number(st.target_paying_rate))} ${judge(payRate, Number(st.target_paying_rate), Number(st.target_paying_rate) * 0.6, tot.families >= 30)}`)}
+      ${stat('累計の売上', yen(tot.revenue_ever_yen), `払ったことのある家族 ${num(tot.paying_families_ever)}`)}
+      ${stat('直近30日の粗利', `<span class="${profitCls(m.profit_yen)}">${signedYen(m.profit_yen)}</span>`, delta(m.profit_yen, pm.profit_yen, 'yen') + `<br>手取り ${yen(m.net_yen)} − 原価 ${yen(m.cost_yen)}`, true)}
+      ${stat('直近30日の原価', yen(m.cost_yen), `AI ${yen(m.ai_yen)}（話す ${yen(m.ai_chat_yen)}・読みとり ${yen(m.ai_read_yen)}・声 ${yen(m.ai_voice_yen)}）<br>紹介 ${yen(m.affiliate_yen)}・固定 ${yen(m.fixed_yen)}`)}
+    </div></div>
+
+    <div class="card"><h2>ベンチマーク <span class="muted">直近30日。継続率は登録から日数がたった人の平均。目安は家族向けの定期課金アプリの一般的な値と、Melu の採算の計算から</span></h2><div class="grid">
+      ${stat('粗利率', fmtPct(margin30), `粗利 ÷ 手取り（30日）<br>目標 ${fmtPct(Number(st.target_gross_margin), 0)} ${judge(margin30, Number(st.target_gross_margin), Number(st.target_gross_margin) / 2, m.net_yen > 0)}`, true)}
+      ${stat('MAU', num(bm.mau), `30日に開いた人・家族 ${num(bm.active_families)}`)}
+      ${stat('ARPU', arpu === null ? '—' : yen(arpu), `売上 ${yen(bm.revenue30_yen)} ÷ MAU`)}
+      ${stat('ARPPU', arppu === null ? '—' : yen(arppu), `売上 ÷ 払った家族 ${num(bm.payer_families30)}`)}
+      ${stat('LTV（90日の実績）', ltv90 === null ? '—' : yen(ltv90), `家族ができて90日以上の ${num(bm.ltv90_families)} 家族の、90日の売上の平均`)}
+      ${stat('サブスク LTV（予測）', subLtv === null ? '—' : yen(subLtv), `1件の月の売上 ${subArpu === null ? '—' : yen(subArpu)} ÷ 月の解約率`, true)}
+      ${stat('継続率 D1 / D7 / D30', `${fmtPct(ret('d1'), 0)} <span class="unit">/</span> ${fmtPct(ret('d7'), 0)} <span class="unit">/</span> ${fmtPct(ret('d30'), 0)}`,
+        `母数 ${num(r.d1?.cohort)} / ${num(r.d7?.cohort)} / ${num(r.d30?.cohort)}<br>目安 40% / 20% / 10% ${judge(ret('d7'), 0.2, 0.12, (r.d7?.cohort || 0) >= 20)}`)}
+      ${stat('月の解約率', fmtPct(churn), `切れた ${num(bm.churned)} ÷ 30日前に払っていた ${num(bm.churn_base)}<br>目安 6%以内 ${judgeLow(churn, 0.06, 0.1, (bm.churn_base || 0) >= 10)}`)}
+      ${stat('お試し → 有料', fmtPct(trialConv), `有料になった ${num(bm.trial_converted)} ÷ 31日以上たった ${num(bm.trial_matured)}（はじめた ${num(bm.trial_started)}）<br>目安 40%以上 ${judge(trialConv, 0.4, 0.25, (bm.trial_matured || 0) >= 10)}`)}
+      ${stat('AI の原価 / MAU / 月', aiPerMau === null ? '—' : yen(aiPerMau), `AI ${yen(bm.ai30_yen)} ÷ MAU（30日）<br>使っている家族1つあたり ${aiPerFamilyActive === null ? '—' : yen(aiPerFamilyActive)}`)}
+      ${stat('原価 / DAU / 日', costPerDau === null ? '—' : yen(costPerDau), '原価 ÷ のべ DAU（30日）')}
+    </div>
+    <p class="muted" style="margin:8px 0 0">採算の計算（2026-10-31）: 払っている家族の手取り 1家族 約721円/月、AI の原価 約200〜270円/月。無料で使う家族は約15〜25円/月。粗利30%には、家族の3〜4%が払っている必要があります。</p>
+    </div>
+
+    <div class="grid2">
+      ${chart(view, 'revenue_yen', '売上（円/日）', { yen: true })}
+      ${chart(view, 'cost_yen', '原価（円/日）', { yen: true, alt: true })}
+      ${chart(view, 'profit_yen', '粗利（円/日）', { yen: true })}
+      ${chart(view, 'dau', 'DAU（人/日）', { alt: true })}
+      ${chart(view, 'signups', '登録（人/日）')}
+      ${chart(view, 'trials', 'お試しの開始（件/日）', { alt: true })}
+    </div>
+
+    <div class="card"><h2>日ごと <span class="muted">新しい順</span></h2><div class="tablewrap"><table>
+      <thead><tr><th>日</th><th class="n">売上</th><th class="n">手取り</th><th class="n">初回</th><th class="n">更新</th><th class="n">返金</th><th class="n">AI</th><th class="n">紹介</th><th class="n">固定</th><th class="n">原価</th><th class="n">粗利</th><th class="n">粗利率</th><th class="n">DAU</th><th class="n">登録</th><th class="n">家族</th><th class="n">お試し</th><th class="n">話しかけ</th></tr></thead>
+      <tbody>${view.slice().reverse().map((x) => `<tr><td>${esc(x.day)}</td><td class="n">${yen(x.revenue_yen)}</td><td class="n">${yen(x.net_yen)}</td><td class="n">${num(x.paid_initial)}</td><td class="n">${num(x.paid_renewal)}</td><td class="n">${num(x.refunds)}</td>
+        <td class="n">${yen(x.ai_yen)}</td><td class="n">${yen(x.affiliate_yen)}</td><td class="n">${yen(x.fixed_yen)}</td><td class="n">${yen(x.cost_yen)}</td>
+        <td class="n ${profitCls(x.profit_yen)}">${signedYen(x.profit_yen)}</td><td class="n">${fmtPct(rate(x.profit_yen, x.net_yen), 0)}</td>
+        <td class="n">${num(x.dau)}</td><td class="n">${num(x.signups)}</td><td class="n">${num(x.new_families)}</td><td class="n">${num(x.trials)}</td><td class="n">${num(x.messages)}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><th>合計</th>${(() => { const s = sumRows(view); return `<th class="n">${yen(s.revenue_yen)}</th><th class="n">${yen(s.net_yen)}</th><th class="n">${num(s.paid_initial)}</th><th class="n">${num(s.paid_renewal)}</th><th class="n">${num(s.refunds)}</th><th class="n">${yen(s.ai_yen)}</th><th class="n">${yen(s.affiliate_yen)}</th><th class="n">${yen(s.fixed_yen)}</th><th class="n">${yen(s.cost_yen)}</th><th class="n ${profitCls(s.profit_yen)}">${signedYen(s.profit_yen)}</th><th class="n">${fmtPct(rate(s.profit_yen, s.net_yen), 0)}</th><th class="n">${num(Math.round(s.dau / Math.max(s.days, 1)))}<span class="muted">/日</span></th><th class="n">${num(s.signups)}</th><th class="n">${num(s.new_families)}</th><th class="n">${num(s.trials)}</th><th class="n">${num(s.messages)}</th>`; })()}</tr></tfoot>
+    </table></div>
+    <p class="muted">手取り ＝ 売上 ÷ ${1 + Number(st.consumption_tax)}（消費税） × ${1 - Number(st.store_fee_rate)}（手数料 ${fmtPct(Number(st.store_fee_rate), 0)}）。AI は OpenAI が返す使用量 × モデルの値段の見積もり（1ドル ${num(st.usd_jpy)}円）。紹介は、その日に起きた報酬。固定費は月 ${yen(st.fixed_monthly_yen)} を日割り。</p></div>
+
+    <div class="grid2">
+      <div class="card"><h2>プラン</h2><div class="tablewrap"><table>
+        <thead><tr><th>プラン</th><th class="n">件数</th><th class="n">うちお試し</th><th class="n">うち解約予定</th><th class="n">値段</th><th class="n">月換算</th></tr></thead>
+        <tbody>${(b.plans || []).map((p) => `<tr><td>${p.product_id === 'melu_plus_yearly' ? '年額' : p.product_id === 'melu_plus_monthly' ? '月額' : esc(p.product_id)}</td><td class="n">${num(p.active)}</td><td class="n">${num(p.in_trial)}</td><td class="n">${num(p.canceling)}</td><td class="n">${yen(p.price_yen)}</td><td class="n">${yen(p.monthly_yen * (p.active - p.in_trial))}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">まだありません</td></tr>'}</tbody>
+      </table></div><p class="muted">月換算はお試し中をのぞく。解約予定でも期限までは件数にふくむ。</p></div>
+
+      <div class="card"><h2>AI の原価の内訳 <span class="muted">直近30日</span></h2><div class="tablewrap"><table>
+        <thead><tr><th>種類</th><th>モデル</th><th class="n">回数</th><th class="n">金額</th><th class="n">1回あたり</th><th class="n">入力</th><th class="n">うちキャッシュ</th><th class="n">出力</th></tr></thead>
+        <tbody>${(b.ai_breakdown || []).map((a) => `<tr><td>${esc(AI_KIND[a.kind] || a.kind)}</td><td>${esc(a.model)}</td><td class="n">${num(a.calls)}</td><td class="n">${yen(a.yen)}</td><td class="n">${a.yen_per_call === null ? '—' : '¥' + Number(a.yen_per_call).toFixed(2)}</td><td class="n">${num(a.input_tokens)}</td><td class="n">${num(a.cached_tokens)}</td><td class="n">${num(a.output_tokens)}</td></tr>`).join('') || '<tr><td colspan="8" class="muted">まだ記録がありません（この画面と一緒に記録をはじめました）</td></tr>'}</tbody>
+      </table></div></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card"><h2>継続 <span class="muted">登録した日ごと・直近21日</span></h2><div class="tablewrap"><table>
+        <thead><tr><th>登録した日</th><th class="n">人数</th><th class="n">D1</th><th class="n">D3</th><th class="n">D7</th></tr></thead>
+        <tbody>${(b.retention_days || []).map((x) => { const age = (Date.parse(b.today) - Date.parse(x.day)) / 86400000; const c = (v, nn) => (age >= nn ? fmtPct(rate(v, x.cohort), 0) : '<span class="muted">—</span>'); return `<tr><td>${esc(x.day)}</td><td class="n">${num(x.cohort)}</td><td class="n">${c(x.d1, 1)}</td><td class="n">${c(x.d3, 3)}</td><td class="n">${c(x.d7, 7)}</td></tr>`; }).join('') || '<tr><td colspan="5" class="muted">まだいません</td></tr>'}</tbody>
+      </table></div><p class="muted">D1 ＝ 登録の次の日にアプリを開いた人の割合。アプリを開いた日の記録は、ビルド34から（それより前は、メルに話しかけた日で数えています）。</p></div>
+
+      <div class="card"><h2>LTV <span class="muted">家族ができた月ごと・これまでの売上</span></h2><div class="tablewrap"><table>
+        <thead><tr><th>月</th><th class="n">家族</th><th class="n">払った家族</th><th class="n">払った割合</th><th class="n">売上</th><th class="n">1家族あたり</th></tr></thead>
+        <tbody>${(b.cohorts || []).map((c) => `<tr><td>${esc(c.month)}</td><td class="n">${num(c.families)}</td><td class="n">${num(c.payers)}</td><td class="n">${fmtPct(rate(c.payers, c.families), 1)}</td><td class="n">${yen(c.revenue_yen)}</td><td class="n">${yen(rate(c.revenue_yen, c.families) || 0)}</td></tr>`).join('')}</tbody>
+      </table></div></div>
+    </div>
+
+    <div class="card"><h2>使われ方 <span class="muted">直近30日</span></h2><div class="grid">
+      ${stat('アカウント', num(k.totals.users), `家族のメンバー ${num(k.totals.members)}（ログインあり ${num(k.totals.members_with_account)}）`)}
+      ${stat('家族', num(k.totals.families))}
+      ${stat('メルと話した人', num(k.period.active_members), `家族 ${num(k.period.active_families)}・話しかけ ${num(k.period.messages)} 回`)}
+      ${stat('LINE とつないだ人', num(k.totals.line_links), `通知を受けとる端末 ${num(k.totals.push_tokens)}`)}
+      ${stat('今月の読みとり', num((k.this_month_ai.read || 0) + (k.this_month_ai.receipt || 0)), `プリント ${num(k.this_month_ai.read)}・レシート ${num(k.this_month_ai.receipt)}・献立 ${num(k.this_month_ai.meal_recipe)}`)}
+      ${stat('紹介', num(k.affiliate.clicks) + '<span class="unit"> クリック</span>', `結びついた人 ${num(k.affiliate.attributions)}・報酬 ${yen(k.affiliate.reward_yen)}`)}
+    </div></div>
+
+    <div class="card"><h2>計算に使う値</h2>
+      <form id="settingsForm" class="row" style="align-items:flex-end">
+        <label class="f">1ドル（円）<input name="usdJpy" type="number" step="0.1" value="${esc(st.usd_jpy)}"></label>
+        <label class="f">ストアの手数料（%）<input name="storeFeeRate" type="number" step="0.1" value="${Number(st.store_fee_rate) * 100}"></label>
+        <label class="f">消費税（%）<input name="consumptionTax" type="number" step="0.1" value="${Number(st.consumption_tax) * 100}"></label>
+        <label class="f">固定費（円/月）<input name="fixedMonthlyYen" type="number" step="1" value="${esc(st.fixed_monthly_yen)}"></label>
+        <label class="f">目標の粗利率（%）<input name="targetGrossMargin" type="number" step="0.1" value="${Number(st.target_gross_margin) * 100}"></label>
+        <label class="f">目標の課金率（%）<input name="targetPayingRate" type="number" step="0.1" value="${Number(st.target_paying_rate) * 100}"></label>
+        <button class="btn" type="submit">保存</button>
+      </form>
+      <p class="muted">固定費には、Supabase・Apple Developer・ドメイン・メール送信などの毎月かかる費用を入れてください。</p>
+    </div>`;
+  el.querySelectorAll('[data-days]').forEach((bt) => bt.addEventListener('click', () => { kpiDays = Number(bt.dataset.days); loadKpi().catch((e) => flash(e.message, true)); }));
+  $('settingsForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = Object.fromEntries(new FormData(e.target));
+    try {
+      await api('/settings', { method: 'PATCH', body: {
+        usdJpy: Number(f.usdJpy), storeFeeRate: Number(f.storeFeeRate) / 100, consumptionTax: Number(f.consumptionTax) / 100,
+        fixedMonthlyYen: Number(f.fixedMonthlyYen), targetGrossMargin: Number(f.targetGrossMargin) / 100, targetPayingRate: Number(f.targetPayingRate) / 100,
+      } });
+      flash('保存しました。');
+      await loadKpi();
+    } catch (err) { flash(err.message, true); }
+  });
+}
+const AI_KIND = { chat: 'メルと話す', voice: '声', read: 'プリントの読みとり', receipt: 'レシート', statement: '明細', recipe: 'レシピの取りこみ', meal_recipe: '献立' };
+
+// ---- 紹介する人 -------------------------------------------------------------
+let affiliates = [];
+async function loadAffiliates() {
+  const el = $('tab-affiliates');
+  el.innerHTML = '<div class="muted">読みこみ中…</div>';
+  affiliates = await api('/affiliates');
+  el.innerHTML = `
+    <div class="card">
+      <h2>紹介する人を足す</h2>
+      <form id="addAff" class="row" style="align-items:flex-end">
+        <label class="f">名前<input name="name" required></label>
+        <label class="f">メール<input name="email" type="email"></label>
+        <label class="f">種類<select name="type"><option value="individual">個人（初回50%・更新20%）</option><option value="agency">代理店（30%）</option></select></label>
+        <label class="f">コード（空なら自動）<input name="code" placeholder="MELU1234" maxlength="12"></label>
+        <label class="f">メモ<input name="note"></label>
+        <button class="btn" type="submit">足す</button>
+      </form>
+    </div>
+    <div class="card"><h2>一覧（${affiliates.length}人）</h2><div class="tablewrap"><table>
+      <thead><tr><th>名前</th><th>コード</th><th>種類</th><th>状態</th><th class="n">初回</th><th class="n">更新</th><th class="n">クリック</th><th class="n">結びついた人</th><th class="n">売上</th><th class="n">保留</th><th class="n">確定</th><th class="n">支払済</th><th>振込先</th><th>登録日</th></tr></thead>
+      <tbody>${affiliates.map((a) => `<tr class="click" data-id="${esc(a.id)}">
+        <td>${esc(a.name)}</td><td>${esc(a.code)}</td><td>${esc(TYPE[a.type] || a.type)}</td><td>${pill(a.status)}</td>
+        <td class="n">${pct(a.sub_initial_rate)}</td><td class="n">${pct(a.sub_rate)}</td>
+        <td class="n">${num(a.clicks)}</td><td class="n">${num(a.users)}</td><td class="n">${yen(a.gross_yen)}</td>
+        <td class="n">${yen(a.pending_yen)}</td><td class="n">${yen(a.confirmed_yen)}</td><td class="n">${yen(a.paid_yen)}</td>
+        <td>${a.has_bank ? 'あり' : '<span class="muted">なし</span>'}</td><td>${day(a.created_at)}</td></tr>`).join('') || '<tr><td colspan="14" class="muted">まだいません</td></tr>'}</tbody>
+    </table></div></div>
+    <div id="affDetail"></div>`;
+  $('addAff').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    try {
+      const r = await api('/affiliates', { method: 'POST', body: Object.fromEntries(f) });
+      flash(`足しました（コード ${r.code}）。`);
+      await loadAffiliates();
+      showAffiliate(r.id);
+    } catch (err) { flash(err.message, true); }
+  });
+  el.querySelectorAll('tr[data-id]').forEach((tr) => tr.addEventListener('click', () => showAffiliate(tr.dataset.id)));
+}
+
+async function showAffiliate(id) {
+  const box = $('affDetail');
+  box.innerHTML = '<div class="card muted">読みこみ中…</div>';
+  const d = await api('/affiliates/' + id);
+  const a = d.profile, s = d.stats?.totals || {};
+  const bank = a.bank_info || {};
+  box.innerHTML = `<div class="card stack">
+    <div class="row" style="justify-content:space-between"><h2 style="margin:0">${esc(a.name)}（${esc(a.code)}）</h2><button class="btn ghost small" id="closeDetail">閉じる</button></div>
+    <div class="grid">
+      ${stat('クリック', num(s.clicks))}${stat('インストール', num(s.installs))}${stat('家族', num(s.families))}
+      ${stat('初回の課金', num(s.first_subscriptions))}${stat('更新', num(s.renewals))}${stat('返金', num(s.refunds))}
+      ${stat('売上', yen(s.gross_yen))}${stat('報酬（保留）', yen(s.pending_yen))}${stat('報酬（確定）', yen(s.confirmed_yen))}${stat('報酬（支払済）', yen(s.paid_yen))}
+      ${stat('いまプラスの家族', num(d.stats?.active_subscriptions))}
+    </div>
+    <div class="grid2">
+      <div>
+        <h3>設定</h3>
+        <form id="affEdit" class="stack">
+          <div class="row">
+            <label class="f">種類<select name="type"><option value="individual" ${a.type === 'individual' ? 'selected' : ''}>個人</option><option value="agency" ${a.type === 'agency' ? 'selected' : ''}>代理店</option></select></label>
+            <label class="f">初回の率（%）<input name="initial" type="number" step="0.1" min="0" max="100" value="${Number(a.sub_initial_rate) * 100}"></label>
+            <label class="f">更新の率（%）<input name="renewal" type="number" step="0.1" min="0" max="100" value="${Number(a.sub_rate) * 100}"></label>
+          </div>
+          <label class="f">メモ<textarea name="note" rows="2">${esc(a.note)}</textarea></label>
+          <div class="row">
+            <button class="btn" type="submit">保存</button>
+            <button class="btn ghost" type="button" id="toggleStatus">${a.status === 'active' ? '停止する' : '再開する'}</button>
+            <button class="btn ghost" type="button" id="resetPw">パスワード再設定のしるしを出す</button>
+          </div>
+          <div class="muted">率を変えても、これまでの報酬は変わりません。停止中は、新しい紹介も報酬も作りません。</div>
+          <div id="pwToken"></div>
+        </form>
+      </div>
+      <div>
+        <h3>登録の中身</h3>
+        <dl class="kv">
+          <dt>状態</dt><dd>${pill(a.status)}</dd>
+          <dt>メール</dt><dd>${esc(a.email) || '–'}</dd>
+          <dt>適格請求書の番号</dt><dd>${esc(a.invoice_reg_no) || '–'}</dd>
+          <dt>振込先</dt><dd>${Object.keys(bank).length ? Object.entries(bank).map(([k, v]) => `${esc(k)}: ${esc(v)}`).join('<br>') : '–'}</dd>
+          <dt>規約への同意</dt><dd>${time(a.agreed_at)}</dd>
+          <dt>登録日</dt><dd>${time(a.created_at)}</dd>
+        </dl>
+      </div>
+    </div>
+    <div>
+      <h3>コード</h3>
+      <div class="tablewrap"><table><thead><tr><th>コード</th><th>名前</th><th>状態</th><th class="n">クリック</th><th class="n">インストール</th><th class="n">初回</th><th class="n">更新</th><th class="n">報酬</th><th></th></tr></thead>
+      <tbody>${(d.stats?.codes || []).map((c) => `<tr><td>${esc(c.code)}${c.is_primary ? ' <span class="muted">（はじめ）</span>' : ''}</td><td>${esc(c.label) || '–'}</td><td>${c.active ? pill('active') : pill('paused')}</td>
+        <td class="n">${num(c.clicks)}</td><td class="n">${num(c.installs)}</td><td class="n">${num(c.first_subscriptions)}</td><td class="n">${num(c.renewals)}</td><td class="n">${yen(c.reward_yen)}</td>
+        <td>${c.is_primary ? '' : `<button class="btn ghost small" data-code="${esc(c.code)}" data-active="${c.active ? '1' : ''}">${c.active ? '止める' : '再開'}</button>`}</td></tr>`).join('')}</tbody></table></div>
+      <form id="addCode" class="row" style="margin-top:8px">
+        <input name="code" placeholder="コード（空なら自動）" maxlength="12"><input name="label" placeholder="名前（Instagram など）"><button class="btn small" type="submit">コードを足す</button>
+      </form>
+    </div>
+    <div>
+      <h3>月ごと</h3>
+      <div class="tablewrap"><table><thead><tr><th>月</th><th class="n">クリック</th><th class="n">インストール</th><th class="n">初回</th><th class="n">更新</th><th class="n">報酬</th></tr></thead>
+      <tbody>${(d.monthly || []).slice().reverse().map((m) => `<tr><td>${esc(m.period)}</td><td class="n">${num(m.clicks)}</td><td class="n">${num(m.installs)}</td><td class="n">${num(m.first_subscriptions)}</td><td class="n">${num(m.renewals)}</td><td class="n">${yen(m.reward_yen)}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">まだありません</td></tr>'}</tbody></table></div>
+    </div>
+    <div>
+      <h3>最近の報酬（50件）</h3>
+      <div class="tablewrap"><table><thead><tr><th>日時</th><th>種類</th><th>コード</th><th class="n">支払い</th><th class="n">率</th><th class="n">報酬</th><th>状態</th></tr></thead>
+      <tbody>${(d.rewards?.recent || []).map((r) => `<tr><td>${time(r.occurred_at)}</td><td>${esc(KIND[r.kind] || r.kind)}</td><td>${esc(r.code)}</td><td class="n">${yen(r.gross_yen)}</td><td class="n">${pct(r.rate)}</td><td class="n">${yen(r.reward_yen)}</td><td>${pill(r.status)}</td></tr>`).join('') || '<tr><td colspan="7" class="muted">まだありません</td></tr>'}</tbody></table></div>
+    </div>
+    <div class="grid2">
+      <div><h3>支払い</h3><div class="tablewrap"><table><thead><tr><th>月</th><th class="n">金額</th><th>状態</th><th>明細の確認</th></tr></thead>
+        <tbody>${(d.rewards?.payouts || []).map((p) => `<tr><td>${esc(p.period_ym)}</td><td class="n">${yen(p.total_yen)}</td><td>${pill(p.status)}</td><td>${time(p.confirmed_at)}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">まだありません</td></tr>'}</tbody></table></div></div>
+      <div><h3>結びついた人（最近50人）</h3><div class="tablewrap"><table><thead><tr><th>日時</th><th>コード</th><th>きっかけ</th></tr></thead>
+        <tbody>${(d.attributions || []).map((t) => `<tr><td>${time(t.created_at)}</td><td>${esc(t.code)}</td><td>${esc(SOURCE[t.source] || t.source)}</td></tr>`).join('') || '<tr><td colspan="3" class="muted">まだいません</td></tr>'}</tbody></table></div></div>
+    </div>
+  </div>`;
+  box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  $('closeDetail').addEventListener('click', () => (box.innerHTML = ''));
+  $('affEdit').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    try {
+      await api('/affiliates/' + id, { method: 'PATCH', body: {
+        type: f.get('type'), note: f.get('note'),
+        subInitialRate: Number(f.get('initial')) / 100, subRate: Number(f.get('renewal')) / 100,
+      } });
+      flash('保存しました。');
+      await loadAffiliates(); await showAffiliate(id);
+    } catch (err) { flash(err.message, true); }
+  });
+  $('toggleStatus').addEventListener('click', (e) => twoStep(e.target, e.target.textContent, async () => {
+    try {
+      await api('/affiliates/' + id, { method: 'PATCH', body: { status: a.status === 'active' ? 'paused' : 'active' } });
+      flash(a.status === 'active' ? '停止しました。' : '再開しました。');
+      await loadAffiliates(); await showAffiliate(id);
+    } catch (err) { flash(err.message, true); }
+  }));
+  $('resetPw').addEventListener('click', (e) => twoStep(e.target, e.target.textContent, async () => {
+    try {
+      const r = await api('/affiliates/' + id + '/password-reset', { method: 'POST' });
+      $('pwToken').innerHTML = `<div class="muted">このしるしを本人にメールで送ってください（24時間・1回だけ使えます）。</div><div class="token">${esc(r.token)}</div>`;
+    } catch (err) { flash(err.message, true); }
+  }));
+  $('addCode').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    try {
+      const r = await api('/affiliates/' + id + '/codes', { method: 'POST', body: Object.fromEntries(f) });
+      flash(`コード ${r.code} を足しました。`);
+      await showAffiliate(id);
+    } catch (err) { flash(err.message, true); }
+  });
+  box.querySelectorAll('[data-code]').forEach((b) => b.addEventListener('click', async () => {
+    try {
+      await api('/affiliates/' + id + '/codes/' + encodeURIComponent(b.dataset.code), { method: 'PATCH', body: { active: !b.dataset.active } });
+      await showAffiliate(id);
+    } catch (err) { flash(err.message, true); }
+  }));
+}
+
+// ---- 報酬 -------------------------------------------------------------------
+let rewardFilter = { status: '', affiliateId: '' };
+async function loadRewards() {
+  const el = $('tab-rewards');
+  el.innerHTML = '<div class="muted">読みこみ中…</div>';
+  if (!affiliates.length) affiliates = await api('/affiliates');
+  const qs = new URLSearchParams(Object.entries(rewardFilter).filter(([, v]) => v)).toString();
+  const rows = await api('/rewards' + (qs ? '?' + qs : ''));
+  const sum = rows.reduce((s, r) => s + (r.status === 'canceled' ? 0 : Number(r.reward_yen || 0)), 0);
+  el.innerHTML = `<div class="card">
+    <div class="row" style="margin-bottom:10px">
+      <select id="rfStatus"><option value="">すべての状態</option>${['pending', 'confirmed', 'paid', 'canceled'].map((s) => `<option value="${s}" ${rewardFilter.status === s ? 'selected' : ''}>${STATUS[s]}</option>`).join('')}</select>
+      <select id="rfAff"><option value="">すべての人</option>${affiliates.map((a) => `<option value="${esc(a.id)}" ${rewardFilter.affiliateId === a.id ? 'selected' : ''}>${esc(a.name)}（${esc(a.code)}）</option>`).join('')}</select>
+      <span class="muted">${rows.length}件・取消をのぞく合計 ${yen(sum)}（新しい順に300件まで）</span>
+    </div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>日時</th><th>紹介する人</th><th>コード</th><th>種類</th><th>ストア</th><th class="n">支払い</th><th class="n">手数料のあと</th><th class="n">率</th><th class="n">報酬</th><th>状態</th><th>メモ</th><th></th></tr></thead>
+      <tbody>${rows.map((r) => `<tr><td>${time(r.occurred_at)}</td><td>${esc(r.affiliates?.name)}</td><td>${esc(r.code)}</td><td>${esc(KIND[r.kind] || r.kind)}</td><td>${esc(r.source_type)}</td>
+        <td class="n">${yen(r.gross_yen)}</td><td class="n">${yen(r.net_yen)}</td><td class="n">${pct(r.rate)}</td><td class="n">${yen(r.reward_yen)}</td><td>${pill(r.status)}</td><td>${esc(r.note)}</td>
+        <td>${r.status === 'pending' || r.status === 'confirmed' ? `<button class="btn danger small" data-reject="${esc(r.id)}">却下</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="12" class="muted">ありません</td></tr>'}</tbody>
+    </table></div>
+    <p class="muted">却下は、返金と同じあつかいです（まだ払っていなければ取り消し、払ったあとなら次の支払いから差し引きます）。</p>
+  </div>`;
+  $('rfStatus').addEventListener('change', (e) => { rewardFilter.status = e.target.value; loadRewards().catch((x) => flash(x.message, true)); });
+  $('rfAff').addEventListener('change', (e) => { rewardFilter.affiliateId = e.target.value; loadRewards().catch((x) => flash(x.message, true)); });
+  el.querySelectorAll('[data-reject]').forEach((b) => b.addEventListener('click', () => twoStep(b, '却下', async () => {
+    try {
+      await api('/rewards/' + b.dataset.reject + '/reject', { method: 'POST', body: { note: '管理画面で却下' } });
+      flash('却下しました。');
+      await loadRewards();
+    } catch (err) { flash(err.message, true); }
+  })));
+}
+
+// ---- 締めと支払い -----------------------------------------------------------
+function lastMonth() {
+  const now = new Date(Date.now() + 9 * 3600 * 1000);
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+  return d.toISOString().slice(0, 7);
+}
+async function loadPayouts() {
+  const el = $('tab-payouts');
+  el.innerHTML = '<div class="muted">読みこみ中…</div>';
+  const [payouts, report] = await Promise.all([api('/payouts'), api('/report')]);
+  el.innerHTML = `
+    <div class="card">
+      <h2>月末の締め</h2>
+      <div class="muted" style="margin-bottom:8px">① 締める: その月の終わりまでの報酬のうち、返金を待つ日数が過ぎたものを「確定」にします。② 支払いのまとめを作る: 確定した報酬を人ごとに合わせます（5,000円未満は翌月へ繰り越し）。③ 振り込んだら「振り込んだ」を押します。</div>
+      <form id="closeForm" class="row" style="align-items:flex-end">
+        <label class="f">月<input name="periodYm" value="${lastMonth()}" pattern="\\d{4}-\\d{2}" required></label>
+        <label class="f">返金を待つ日数<input name="holdDays" type="number" min="0" max="120" value="30"></label>
+        <button class="btn" type="button" id="doClose">① 締める</button>
+        <button class="btn" type="button" id="doBuild">② 支払いのまとめを作る</button>
+      </form>
+    </div>
+    <div class="card"><h2>支払い</h2><div class="tablewrap"><table>
+      <thead><tr><th>月</th><th>紹介する人</th><th class="n">金額</th><th>状態</th><th>本人の確認</th><th>振込先</th><th>振り込んだ日</th><th></th></tr></thead>
+      <tbody>${payouts.map((p) => {
+        const b = p.affiliates?.bank_info || {};
+        return `<tr><td>${esc(p.period_ym)}</td><td>${esc(p.affiliates?.name)}（${esc(p.affiliates?.code)}）</td><td class="n">${yen(p.total_yen)}</td><td>${pill(p.status)}</td>
+          <td>${p.confirmed_at ? time(p.confirmed_at) : '<span class="muted">まだ</span>'}</td>
+          <td>${Object.keys(b).length ? esc(Object.values(b).join(' ')) : '<span class="down">なし</span>'}</td><td>${time(p.paid_at)}</td>
+          <td class="row"><button class="btn ghost small" data-statement="${esc(p.id)}">明細</button>${p.status === 'pending' ? `<button class="btn small" data-paid="${esc(p.id)}">振り込んだ</button>` : ''}</td></tr>`;
+      }).join('') || '<tr><td colspan="8" class="muted">まだありません</td></tr>'}</tbody>
+    </table></div><div id="statement"></div></div>
+    <div class="card"><h2>月ごと・人ごとのまとめ</h2><div class="tablewrap"><table>
+      <thead><tr><th>月</th><th>紹介する人</th><th class="n">クリック</th><th class="n">インストール</th><th class="n">家族</th><th class="n">初回</th><th class="n">更新</th><th class="n">返金</th><th class="n">売上</th><th class="n">保留</th><th class="n">確定</th><th class="n">支払済</th></tr></thead>
+      <tbody>${report.map((r) => `<tr><td>${esc(r.month)}</td><td>${esc(r.name)}</td><td class="n">${num(r.clicks)}</td><td class="n">${num(r.installs)}</td><td class="n">${num(r.families)}</td><td class="n">${num(r.first_subscriptions)}</td><td class="n">${num(r.renewals)}</td><td class="n">${num(r.canceled)}</td><td class="n">${yen(r.gross_yen)}</td><td class="n">${yen(r.reward_pending_yen)}</td><td class="n">${yen(r.reward_confirmed_yen)}</td><td class="n">${yen(r.reward_paid_yen)}</td></tr>`).join('') || '<tr><td colspan="12" class="muted">まだありません</td></tr>'}</tbody>
+    </table></div></div>`;
+  const form = () => Object.fromEntries(new FormData($('closeForm')));
+  $('doClose').addEventListener('click', (e) => twoStep(e.target, '① 締める', async () => {
+    try {
+      const f = form();
+      const r = await api('/close-month', { method: 'POST', body: { periodYm: f.periodYm, holdDays: Number(f.holdDays) } });
+      flash(`${f.periodYm} を締めました。確定にした報酬: ${r.confirmed}件`);
+      await loadPayouts();
+    } catch (err) { flash(err.message, true); }
+  }));
+  $('doBuild').addEventListener('click', (e) => twoStep(e.target, '② 支払いのまとめを作る', async () => {
+    try {
+      const f = form();
+      const r = await api('/build-payouts', { method: 'POST', body: { periodYm: f.periodYm } });
+      flash('支払いのまとめを作りました: ' + JSON.stringify(r));
+      await loadPayouts();
+    } catch (err) { flash(err.message, true); }
+  }));
+  el.querySelectorAll('[data-paid]').forEach((b) => b.addEventListener('click', () => twoStep(b, '振り込んだ', async () => {
+    try {
+      await api('/payouts/' + b.dataset.paid + '/paid', { method: 'POST' });
+      flash('支払い済みにしました。');
+      await loadPayouts();
+    } catch (err) { flash(err.message, true); }
+  })));
+  el.querySelectorAll('[data-statement]').forEach((b) => b.addEventListener('click', async () => {
+    try {
+      const s = await api('/payouts/' + b.dataset.statement + '/statement');
+      $('statement').innerHTML = `<div class="card" style="margin-top:12px"><h3 style="margin-top:0">支払いの明細（${esc(s.period_ym)}・${esc(s.recipient?.name)}）</h3>
+        <dl class="kv"><dt>適格請求書の番号</dt><dd>${esc(s.recipient?.invoice_reg_no) || '–'}</dd>
+        ${(s.lines || []).map((l) => `<dt>${esc(KIND[l.kind] || l.kind)}（${num(l.count)}件）</dt><dd>${yen(l.total_yen)}</dd>`).join('')}
+        <dt>税抜</dt><dd>${yen(s.subtotal_yen)}</dd><dt>消費税（10%）</dt><dd>${yen(s.tax_yen)}</dd><dt>合計（税込）</dt><dd><b>${yen(s.total_yen)}</b></dd></dl></div>`;
+    } catch (err) { flash(err.message, true); }
+  }));
+}
+
+start();
+</script>
+</body>
+</html>
