@@ -99,6 +99,18 @@
       <button class="btn" type="submit">ログイン</button>
       <button class="btn ghost" type="button" id="backToEmail">メールアドレスを入れなおす</button>
     </form>
+    <!-- 二段階認証（認証アプリの6けた） -->
+    <form id="totpForm" class="stack" hidden>
+      <div id="totpEnroll" class="stack" hidden>
+        <div>管理画面は、認証アプリ（Google Authenticator や 1Password など）の6けたのコードも使います。はじめに1回だけ、認証アプリにこのアカウントを登録してください。</div>
+        <img id="totpQr" alt="認証アプリで読みとる QR コード" width="180" height="180" style="align-self:center;background:#fff;border-radius:10px;padding:6px">
+        <div class="muted">QR コードが読めないときは、このキーを手で入れてください。</div>
+        <div id="totpSecret" class="token"></div>
+      </div>
+      <label class="f"><span id="totpLabel">認証アプリの6けたのコード</span><input id="totpCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required></label>
+      <button class="btn" type="submit" id="totpSubmit">確かめる</button>
+      <button class="btn ghost" type="button" id="totpLogout">ログアウト</button>
+    </form>
   </div>
 
   <!-- 中身 -->
@@ -141,6 +153,8 @@ const STATUS = { pending: '保留', confirmed: '確定', paid: '支払済', canc
 const KIND = { sub_initial: '初回', sub_renewal: '更新', adjustment: '調整' };
 const TYPE = { individual: '個人', agency: '代理店' };
 const SOURCE = { appsflyer: 'AppsFlyer', link: 'リンク', manual: '手入力', clipboard: '貼り付け', ip: 'IP の一致' };
+// 率（0〜1）を入力欄の % に。null（決めていない）は空欄
+const ratePct = (v) => (v === null || v === undefined || v === '' ? '' : Math.round(Number(v) * 10000) / 100);
 const pill = (s) => `<span class="pill ${esc(s)}">${esc(STATUS[s] || s)}</span>`;
 
 function flash(text, isError) {
@@ -163,6 +177,8 @@ async function api(path, options = {}) {
   });
   const body = await res.json().catch(() => ({}));
   if (res.status === 401) { showLogin('ログインしなおしてください。'); throw new Error(body.error); }
+  // 二段階認証がまだ（登録がまだ・6けたをまだ入れていない）
+  if (res.status === 403 && (body.mfa === 'enroll' || body.mfa === 'verify')) { showTotp(body.mfa); throw new Error(body.error); }
   if (!res.ok) throw new Error(body.error || 'うまくいきませんでした。');
   return body;
 }
@@ -191,8 +207,65 @@ function loginMsg(text, isError) {
 function showLogin(text) {
   $('app').hidden = true;
   $('login').hidden = false;
+  $('totpForm').hidden = true;
+  $('emailForm').hidden = false;
+  $('codeForm').hidden = true;
   loginMsg(text, !!text);
 }
+
+// ---- 二段階認証（認証アプリの6けた） ---------------------------------------
+// enroll: はじめて。認証アプリを登録してから6けたを入れる
+// verify: 登録ずみ。ログインのたびに6けたを入れる（これで aal2 になる）
+let totpMode = '', totpFactorId = '';
+async function showTotp(mode) {
+  totpMode = mode;
+  totpFactorId = '';
+  $('app').hidden = true;
+  $('login').hidden = false;
+  $('emailForm').hidden = true;
+  $('codeForm').hidden = true;
+  $('totpForm').hidden = false;
+  $('totpEnroll').hidden = mode !== 'enroll';
+  $('totpCode').value = '';
+  $('totpLabel').textContent = mode === 'enroll' ? '認証アプリに出た6けたのコード' : '認証アプリの6けたのコード';
+  $('totpSubmit').textContent = mode === 'enroll' ? '登録する' : '確かめる';
+  loginMsg('');
+  const { data: list } = await sb.auth.mfa.listFactors();
+  if (mode === 'verify') {
+    totpFactorId = list?.totp?.[0]?.id || '';
+    if (!totpFactorId) return showTotp('enroll');
+    $('totpCode').focus();
+    return;
+  }
+  // 前に途中でやめた登録（まだ確かめていないもの）を消してから、新しく登録をはじめる
+  for (const f of (list?.all || []).filter((x) => x.factor_type === 'totp' && x.status !== 'verified')) {
+    await sb.auth.mfa.unenroll({ factorId: f.id }).catch(() => {});
+  }
+  const { data, error } = await sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Melu 管理画面 ' + Date.now() });
+  if (error || !data) return loginMsg('認証アプリの登録をはじめられませんでした。少し待ってから、ページを開きなおしてください。', true);
+  totpFactorId = data.id;
+  const qr = data.totp.qr_code || '';
+  $('totpQr').src = qr.startsWith('data:') ? qr : 'data:image/svg+xml;utf-8,' + encodeURIComponent(qr);
+  $('totpSecret').textContent = data.totp.secret;
+  $('totpCode').focus();
+}
+$('totpForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const code = $('totpCode').value.trim();
+  if (!/^\d{6}$/.test(code)) return loginMsg('6けたの数字を入れてください。', true);
+  if (!totpFactorId) return showTotp(totpMode || 'verify');
+  $('totpSubmit').disabled = true;
+  try {
+    const { data: ch, error: chError } = await sb.auth.mfa.challenge({ factorId: totpFactorId });
+    if (chError || !ch) return loginMsg('うまくいきませんでした。少し待ってからもう一度お試しください。', true);
+    const { error } = await sb.auth.mfa.verify({ factorId: totpFactorId, challengeId: ch.id, code });
+    if (error) return loginMsg('コードがちがいます。認証アプリの、いま出ている6けたを入れてください。', true);
+    start();
+  } finally {
+    $('totpSubmit').disabled = false;
+  }
+});
+$('totpLogout').addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
 $('emailForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const email = $('email').value.trim();
@@ -217,6 +290,8 @@ async function start() {
   if (!data.session) return showLogin();
   try {
     const me = await api('/me');
+    // 認証アプリの6けたまで入れていなければ、その画面へ
+    if (me.mfa === 'enroll' || me.mfa === 'verify') return showTotp(me.mfa);
     $('who').textContent = me.email;
     $('login').hidden = true;
     $('app').hidden = false;
@@ -482,7 +557,7 @@ async function loadAffiliates() {
       <thead><tr><th>名前</th><th>コード</th><th>種類</th><th>状態</th><th class="n">初回</th><th class="n">更新</th><th class="n">クリック</th><th class="n">結びついた人</th><th class="n">売上</th><th class="n">保留</th><th class="n">確定</th><th class="n">支払済</th><th>振込先</th><th>登録日</th></tr></thead>
       <tbody>${affiliates.map((a) => `<tr class="click" data-id="${esc(a.id)}">
         <td>${esc(a.name)}</td><td>${esc(a.code)}</td><td>${esc(TYPE[a.type] || a.type)}</td><td>${pill(a.status)}</td>
-        <td class="n">${pct(a.sub_initial_rate)}</td><td class="n">${pct(a.sub_rate)}</td>
+        <td class="n">${a.sub_initial_rate === null || a.sub_initial_rate === undefined ? `<span class="muted" title="更新と同じ">${pct(a.sub_rate)}</span>` : pct(a.sub_initial_rate)}</td><td class="n">${pct(a.sub_rate)}</td>
         <td class="n">${num(a.clicks)}</td><td class="n">${num(a.users)}</td><td class="n">${yen(a.gross_yen)}</td>
         <td class="n">${yen(a.pending_yen)}</td><td class="n">${yen(a.confirmed_yen)}</td><td class="n">${yen(a.paid_yen)}</td>
         <td>${a.has_bank ? 'あり' : '<span class="muted">なし</span>'}</td><td>${day(a.created_at)}</td></tr>`).join('') || '<tr><td colspan="14" class="muted">まだいません</td></tr>'}</tbody>
@@ -521,8 +596,8 @@ async function showAffiliate(id) {
         <form id="affEdit" class="stack">
           <div class="row">
             <label class="f">種類<select name="type"><option value="individual" ${a.type === 'individual' ? 'selected' : ''}>個人</option><option value="agency" ${a.type === 'agency' ? 'selected' : ''}>代理店</option></select></label>
-            <label class="f">初回の率（%）<input name="initial" type="number" step="0.1" min="0" max="100" value="${Number(a.sub_initial_rate) * 100}"></label>
-            <label class="f">更新の率（%）<input name="renewal" type="number" step="0.1" min="0" max="100" value="${Number(a.sub_rate) * 100}"></label>
+            <label class="f">初回の率（%）<input name="initial" type="number" step="0.1" min="0" max="100" placeholder="空なら更新と同じ" value="${ratePct(a.sub_initial_rate)}"></label>
+            <label class="f">更新の率（%）<input name="renewal" type="number" step="0.1" min="0" max="100" required value="${ratePct(a.sub_rate)}"></label>
           </div>
           <label class="f">メモ<textarea name="note" rows="2">${esc(a.note)}</textarea></label>
           <div class="row">
@@ -530,7 +605,7 @@ async function showAffiliate(id) {
             <button class="btn ghost" type="button" id="toggleStatus">${a.status === 'active' ? '停止する' : '再開する'}</button>
             <button class="btn ghost" type="button" id="resetPw">パスワード再設定のしるしを出す</button>
           </div>
-          <div class="muted">率を変えても、これまでの報酬は変わりません。停止中は、新しい紹介も報酬も作りません。</div>
+          <div class="muted">初回の率を空にすると、初回も更新と同じ率になります。率を変えても、これまでの報酬は変わりません。停止中は、新しい紹介も報酬も作りません。</div>
           <div id="pwToken"></div>
         </form>
       </div>
@@ -581,7 +656,9 @@ async function showAffiliate(id) {
     try {
       await api('/affiliates/' + id, { method: 'PATCH', body: {
         type: f.get('type'), note: f.get('note'),
-        subInitialRate: Number(f.get('initial')) / 100, subRate: Number(f.get('renewal')) / 100,
+        // 初回の率が空なら null のまま送る（0% にしない）
+        subInitialRate: String(f.get('initial') ?? '').trim() === '' ? null : Number(f.get('initial')) / 100,
+        subRate: Number(f.get('renewal')) / 100,
       } });
       flash('保存しました。');
       await loadAffiliates(); await showAffiliate(id);
