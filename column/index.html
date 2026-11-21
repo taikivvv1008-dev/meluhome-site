@@ -59,9 +59,32 @@
   th { background: var(--peach); font-weight: 700; white-space: nowrap; }
   tr:last-child td { border-bottom: 0; }
   .note { background: var(--peach); border-radius: 16px; padding: 4px 20px; margin: 20px 0; font-size: 15.5px; }
-  .shot { margin: 28px auto; max-width: 300px; text-align: center; }
-  .shot img { border-radius: 28px; box-shadow: 0 16px 36px rgba(120, 80, 50, .14); }
-  .shot figcaption { font-size: 13px; color: var(--sub); margin-top: 12px; line-height: 1.6; }
+  figure { margin: 28px 0; }
+  figcaption { font-size: 13.5px; color: var(--sub); margin-top: 10px; line-height: 1.65; text-align: center; }
+  .hero { margin: 0 0 28px; }
+  .hero img { width: 100%; border-radius: 24px; border: 1.5px solid var(--line); }
+  .screen { max-width: 560px; margin-inline: auto; }
+  .screen img { width: 100%; border-radius: 24px; }
+  /* 図：白いカードの中に、箱と矢印で描く。スマホでは縦に並べる */
+  .fig { background: var(--paper); border: 1.5px solid var(--line); border-radius: 24px; padding: 24px 22px 20px; }
+  .fig > b { display: block; font-size: 16px; font-weight: 800; line-height: 1.5; margin-bottom: 16px; text-align: center; }
+  .fig ol, .fig ul { list-style: none; margin: 0; padding: 0; }
+  .fig li { margin: 0; }
+  .fig .src { background: var(--ink); color: #fff; border-radius: 16px; padding: 12px 16px; text-align: center; font-weight: 700; font-size: 15.5px; line-height: 1.5; }
+  .fig .src small { display: block; font-weight: 400; font-size: 13px; opacity: .8; }
+  .fig .down { text-align: center; color: var(--orange); font-size: 22px; font-weight: 800; line-height: 1; margin: 8px 0; }
+  .fig .boxes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .fig .boxes.two { grid-template-columns: repeat(2, 1fr); }
+  .fig .boxes li { background: var(--cream); border: 1.5px solid var(--line); border-radius: 16px; padding: 14px 14px 12px; font-size: 14.5px; line-height: 1.6; }
+  .fig .boxes li b { display: inline-block; background: var(--peach); color: var(--orange-deep); border-radius: 999px; padding: 1px 12px; font-size: 13.5px; margin-bottom: 6px; }
+  .fig .boxes li strong { display: block; font-size: 16px; }
+  .fig .boxes li span { display: block; color: var(--sub); font-size: 13.5px; }
+  .fig .flow { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 26px; margin-top: 30px; }
+  .fig .flow li { position: relative; background: var(--cream); border: 1.5px solid var(--line); border-radius: 16px; padding: 28px 12px 14px; text-align: center; font-size: 14px; line-height: 1.55; }
+  .fig .flow li i { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); min-width: 32px; height: 32px; padding: 0 12px; border-radius: 999px; background: var(--orange-deep); color: #fff; font-style: normal; font-weight: 800; font-size: 14.5px; line-height: 32px; white-space: nowrap; }
+  .fig .flow li + li::after { content: "›"; position: absolute; left: -19px; top: 50%; transform: translateY(-50%); color: var(--orange); font-size: 26px; font-weight: 800; line-height: 1; }
+  .fig .flow strong { display: block; font-size: 15.5px; }
+  .fig .flow span { display: block; color: var(--sub); font-size: 13px; margin-top: 2px; }
   .cta { display: flex; gap: 20px; align-items: flex-start; background: var(--paper); border: 2px solid var(--orange); border-radius: 28px; padding: 24px; margin: 40px 0; }
   .cta > img { width: 84px; height: 84px; flex: none; }
   .cta b { font-size: 19px; line-height: 1.5; display: block; }
@@ -78,6 +101,7 @@
   .list { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0 0; padding: 0; list-style: none; }
   .list a { display: block; height: 100%; background: var(--paper); border: 1.5px solid var(--line); border-radius: 20px; padding: 20px; text-decoration: none; color: var(--ink); }
   .list a:hover { border-color: var(--orange); }
+  .list img { width: 100%; border-radius: 12px; margin-bottom: 14px; }
   .list b { display: block; font-size: 17px; line-height: 1.6; margin: 10px 0 6px; }
   .list span.d { display: block; font-size: 14px; color: var(--sub); line-height: 1.7; }
   .list time { display: block; font-size: 12.5px; color: var(--sub); margin-top: 10px; }
@@ -94,6 +118,11 @@
     .list, footer .wrap { grid-template-columns: 1fr; }
     footer { padding-bottom: 110px; }
     .cta { flex-direction: column; gap: 12px; padding: 20px; }
+    .fig { padding: 20px 16px 16px; }
+    .fig .boxes, .fig .boxes.two { grid-template-columns: 1fr; gap: 10px; }
+    .fig .flow { grid-auto-flow: row; gap: 34px; }
+    .fig .flow li + li::after { content: "↓"; left: 50%; top: -32px; transform: translateX(-50%); font-size: 15px; }
+    .fig .flow li i { z-index: 1; }
     .cta > img { width: 64px; height: 64px; }
     .store { flex: 1 1 140px; min-width: 0; padding: 10px 14px; gap: 10px; }
     .store b { font-size: 16px; }
@@ -120,16 +149,19 @@
 <h1>コラム</h1>
 <p class="lead">プリントの整理、提出物や持ち物の忘れもの対策、家族の予定の共有。毎日の「家族のこと」を少し軽くするための記事です。</p>
 <ul class="list"><li><a href="/column/wasuremono-taisaku/">
+  <img src="/column/img/wasuremono-taisaku.jpg" alt="" width="1200" height="630" loading="lazy">
   <span class="tag">忘れもの対策</span>
   <b>小学生の忘れ物・提出物の出し忘れを減らす7つの対策｜親がやること・子どもにまかせること</b>
   <span class="d">持ち物を忘れる、提出物を出し忘れる。小学生の忘れ物が起こる原因と、今日からできる対策を7つ紹介します。親がやることと子どもにまかせることの分け方、前日の夜の準備のしかたが分かります。</span>
   <time datetime="2026-11-21">2026年11月21日</time>
 </a></li><li><a href="/column/school-print-organize/">
+  <img src="/column/img/school-print-organize.jpg" alt="" width="1200" height="630" loading="lazy">
   <span class="tag">プリントの整理</span>
   <b>学校のプリント整理、どうしてる？なくさない・忘れないための5つの方法</b>
   <span class="d">学校や園から毎日届くプリント。なくす、締切を忘れる、持ち物を見落とす…を防ぐ整理の方法を5つ、手間と向いている家庭といっしょに紹介します。紙・写真・アプリのどれが合うかが分かります。</span>
   <time datetime="2026-11-21">2026年11月21日</time>
 </a></li><li><a href="/column/family-calendar-app-erabikata/">
+  <img src="/column/img/family-calendar-app-erabikata.jpg" alt="" width="1200" height="630" loading="lazy">
   <span class="tag">予定の共有</span>
   <b>家族のカレンダー共有アプリの選び方｜失敗しない7つのチェックポイント</b>
   <span class="d">家族で予定を共有するアプリを選ぶときに見ておきたい点を7つにまとめました。入力の手間、子どもの予定、送迎の分担、お知らせ、料金など、入れてから「合わなかった」とならないための確かめ方を紹介します。</span>
