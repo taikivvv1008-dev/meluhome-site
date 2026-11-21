@@ -119,14 +119,29 @@
     .list, footer .wrap { grid-template-columns: 1fr; }
     footer { padding-bottom: 110px; }
     .cta { flex-direction: column; gap: 12px; padding: 20px; }
+    .cta > div { width: 100%; min-width: 0; }
+    /* 表は横にはみ出すので、1行を1枚のカードにして縦に並べる */
+    .table { overflow: visible; border: 0; background: none; border-radius: 0; }
+    table, tbody, tr, td { display: block; width: 100%; }
+    thead { display: none; }
+    tr { background: var(--paper); border: 1.5px solid var(--line); border-radius: 16px; padding: 6px 16px; }
+    tr + tr { margin-top: 12px; }
+    td { display: flex; gap: 12px; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+    td::before { content: attr(data-label); flex: 0 0 42%; color: var(--sub); font-size: 13px; line-height: 1.5; }
+    td:last-child { border-bottom: 0; }
+    td:first-child { font-weight: 700; font-size: 16px; }
+    td:first-child::before { display: none; }
+    table.two td { display: block; }
+    table.two td::before { display: none; }
     .fig { padding: 20px 16px 16px; }
     .fig .boxes, .fig .boxes.two { grid-template-columns: 1fr; gap: 10px; }
     .fig .flow { grid-auto-flow: row; gap: 34px; }
     .fig .flow li + li::after { content: "↓"; left: 50%; top: -32px; transform: translateX(-50%); font-size: 15px; }
     .fig .flow li i { z-index: 1; }
     .cta > img { width: 64px; height: 64px; }
-    .store { flex: 1 1 140px; min-width: 0; padding: 10px 14px; gap: 10px; }
-    .store b { font-size: 16px; }
+    .stores { flex-direction: column; }
+    .store { width: 100%; justify-content: center; padding: 12px 16px; }
+    .store span { text-align: left; }
     .dock { display: flex; align-items: center; gap: 12px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: rgba(255, 255, 255, .96); border-top: 1px solid var(--line); padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -8px 24px rgba(120, 80, 50, .1); }
     .dock span { font-size: 12.5px; font-weight: 700; line-height: 1.45; flex: 1; min-width: 0; }
     .dock .pill { background: var(--orange-deep); padding: 11px 22px; font-size: 15px; }
@@ -191,7 +206,7 @@
 <ul><li>書類は、もらった日にできるだけ書いてしまう</li><li>書いたら、連絡帳にはさむか連絡袋に入れて、すぐランドセルに戻す</li><li>子どもには「朝、先生に出すものがあるよ」と当日の朝にひとこと伝える</li><li>集金のように日が決まっているものは、その日の予定として入れておく</li></ul>
 <h2 id="h7">対策6：親がやること・子どもにまかせることを分ける</h2>
 <p>全部を親が確かめていると、子どもは自分でできるようになりません。学年に合わせて、少しずつまかせていきます。</p>
-<div class="table"><table><thead><tr><th></th><th>親がやること</th><th>子どもにまかせること</th></tr></thead><tbody><tr><td>1〜2年生</td><td>プリントを読む、持ち物を一緒にそろえる</td><td>プリントを出す、リストを見ながら入れる</td></tr><tr><td>3〜4年生</td><td>行事と提出の日を確かめる、夜に「準備した？」と聞く</td><td>時間割をそろえる、持ち物を自分で確かめる</td></tr><tr><td>5〜6年生</td><td>締切と集金だけ確かめる</td><td>準備をすべて自分でやる、足りないものを前もって伝える</td></tr></tbody></table></div>
+<div class="table"><table><thead><tr><th></th><th>親がやること</th><th>子どもにまかせること</th></tr></thead><tbody><tr><td data-label="">1〜2年生</td><td data-label="親がやること">プリントを読む、持ち物を一緒にそろえる</td><td data-label="子どもにまかせること">プリントを出す、リストを見ながら入れる</td></tr><tr><td data-label="">3〜4年生</td><td data-label="親がやること">行事と提出の日を確かめる、夜に「準備した？」と聞く</td><td data-label="子どもにまかせること">時間割をそろえる、持ち物を自分で確かめる</td></tr><tr><td data-label="">5〜6年生</td><td data-label="親がやること">締切と集金だけ確かめる</td><td data-label="子どもにまかせること">準備をすべて自分でやる、足りないものを前もって伝える</td></tr></tbody></table></div>
 <p>これは目安です。子どもによって進み方はちがうので、できていることから1つずつまかせてください。</p>
 <h2 id="h8">対策7：思い出すきっかけを「お知らせ」にまかせる</h2>
 <p>ここまでの対策をしても、忙しい週には確かめること自体を忘れます。最後は、<strong>前もって知らせてくれるしくみ</strong>を作っておくと安心です。</p>
@@ -288,6 +303,8 @@
     var ua = navigator.userAgent;
     var url = /iPhone|iPad|iPod/.test(ua) ? 'https://apps.apple.com/jp/app/id6826726878' : /Android/.test(ua) ? 'https://play.google.com/store/apps/details?id=com.meluhome.app' : '';
     if (url) document.querySelectorAll('a.pill').forEach(function (a) { a.href = url; });
+    // 記事の中のストアのボタンは、その端末のものだけを出す（パソコンでは両方）
+    if (url) document.querySelectorAll('a.store').forEach(function (a) { if (a.href !== url) a.style.display = 'none'; });
   })();
 </script>
 </body>

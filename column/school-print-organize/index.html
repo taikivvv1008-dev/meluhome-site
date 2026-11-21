@@ -119,14 +119,29 @@
     .list, footer .wrap { grid-template-columns: 1fr; }
     footer { padding-bottom: 110px; }
     .cta { flex-direction: column; gap: 12px; padding: 20px; }
+    .cta > div { width: 100%; min-width: 0; }
+    /* 表は横にはみ出すので、1行を1枚のカードにして縦に並べる */
+    .table { overflow: visible; border: 0; background: none; border-radius: 0; }
+    table, tbody, tr, td { display: block; width: 100%; }
+    thead { display: none; }
+    tr { background: var(--paper); border: 1.5px solid var(--line); border-radius: 16px; padding: 6px 16px; }
+    tr + tr { margin-top: 12px; }
+    td { display: flex; gap: 12px; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+    td::before { content: attr(data-label); flex: 0 0 42%; color: var(--sub); font-size: 13px; line-height: 1.5; }
+    td:last-child { border-bottom: 0; }
+    td:first-child { font-weight: 700; font-size: 16px; }
+    td:first-child::before { display: none; }
+    table.two td { display: block; }
+    table.two td::before { display: none; }
     .fig { padding: 20px 16px 16px; }
     .fig .boxes, .fig .boxes.two { grid-template-columns: 1fr; gap: 10px; }
     .fig .flow { grid-auto-flow: row; gap: 34px; }
     .fig .flow li + li::after { content: "↓"; left: 50%; top: -32px; transform: translateX(-50%); font-size: 15px; }
     .fig .flow li i { z-index: 1; }
     .cta > img { width: 64px; height: 64px; }
-    .store { flex: 1 1 140px; min-width: 0; padding: 10px 14px; gap: 10px; }
-    .store b { font-size: 16px; }
+    .stores { flex-direction: column; }
+    .store { width: 100%; justify-content: center; padding: 12px 16px; }
+    .store span { text-align: left; }
     .dock { display: flex; align-items: center; gap: 12px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: rgba(255, 255, 255, .96); border-top: 1px solid var(--line); padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -8px 24px rgba(120, 80, 50, .1); }
     .dock span { font-size: 12.5px; font-weight: 700; line-height: 1.45; flex: 1; min-width: 0; }
     .dock .pill { background: var(--orange-deep); padding: 11px 22px; font-size: 15px; }
@@ -220,7 +235,7 @@
   </div>
 </aside>
 <h2 id="h7">5つの方法をくらべる</h2>
-<div class="table"><table><thead><tr><th>方法</th><th>手間</th><th>外出先で見られる</th><th>締切を知らせてくれる</th><th>家族で共有</th></tr></thead><tbody><tr><td>1. 受け取った日に3つに分ける</td><td>少ない</td><td>×</td><td>×</td><td>×</td></tr><tr><td>2. ファイル・ボックスで分ける</td><td>ふつう</td><td>×</td><td>×</td><td>△（家にいれば）</td></tr><tr><td>3. 今週の分だけ貼る</td><td>ふつう</td><td>×</td><td>△（目に入る）</td><td>○</td></tr><tr><td>4. 写真を撮って共有する</td><td>ふつう</td><td>○</td><td>×（自分で入力）</td><td>○</td></tr><tr><td>5. 読み取るアプリにまかせる</td><td>少ない</td><td>○</td><td>○</td><td>○</td></tr></tbody></table></div>
+<div class="table"><table><thead><tr><th>方法</th><th>手間</th><th>外出先で見られる</th><th>締切を知らせてくれる</th><th>家族で共有</th></tr></thead><tbody><tr><td data-label="方法">1. 受け取った日に3つに分ける</td><td data-label="手間">少ない</td><td data-label="外出先で見られる">×</td><td data-label="締切を知らせてくれる">×</td><td data-label="家族で共有">×</td></tr><tr><td data-label="方法">2. ファイル・ボックスで分ける</td><td data-label="手間">ふつう</td><td data-label="外出先で見られる">×</td><td data-label="締切を知らせてくれる">×</td><td data-label="家族で共有">△（家にいれば）</td></tr><tr><td data-label="方法">3. 今週の分だけ貼る</td><td data-label="手間">ふつう</td><td data-label="外出先で見られる">×</td><td data-label="締切を知らせてくれる">△（目に入る）</td><td data-label="家族で共有">○</td></tr><tr><td data-label="方法">4. 写真を撮って共有する</td><td data-label="手間">ふつう</td><td data-label="外出先で見られる">○</td><td data-label="締切を知らせてくれる">×（自分で入力）</td><td data-label="家族で共有">○</td></tr><tr><td data-label="方法">5. 読み取るアプリにまかせる</td><td data-label="手間">少ない</td><td data-label="外出先で見られる">○</td><td data-label="締切を知らせてくれる">○</td><td data-label="家族で共有">○</td></tr></tbody></table></div>
 <p>どれか1つにしぼる必要はありません。たとえば「提出物はその日に書く（方法1）＋それ以外はアプリに渡す（方法5）」のように組み合わせると、続けやすくなります。</p>
 <h2 id="h8">続けるための3つのコツ</h2>
 <h3>帰ってきたら出す場所を1つ決める</h3>
@@ -292,6 +307,8 @@
     var ua = navigator.userAgent;
     var url = /iPhone|iPad|iPod/.test(ua) ? 'https://apps.apple.com/jp/app/id6826726878' : /Android/.test(ua) ? 'https://play.google.com/store/apps/details?id=com.meluhome.app' : '';
     if (url) document.querySelectorAll('a.pill').forEach(function (a) { a.href = url; });
+    // 記事の中のストアのボタンは、その端末のものだけを出す（パソコンでは両方）
+    if (url) document.querySelectorAll('a.store').forEach(function (a) { if (a.href !== url) a.style.display = 'none'; });
   })();
 </script>
 </body>
